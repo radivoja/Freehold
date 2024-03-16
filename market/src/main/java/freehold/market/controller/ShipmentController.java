@@ -1,7 +1,7 @@
 package freehold.market.controller;
 
 import freehold.market.model.GoodsType;
-import freehold.market.model.Shipment;
+import freehold.market.model.dto.ShipmentDto;
 import freehold.market.services.ShipmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,13 +18,18 @@ public class ShipmentController {
     private final ShipmentService shipmentService;
 
     @GetMapping
-    public ResponseEntity<List<Shipment>> findAllShipments(){
+    public ResponseEntity<List<ShipmentDto>> findAllShipments(){
+        List<ShipmentDto> shipmentDtoList = shipmentService.getShipments();
+        if(shipmentDtoList.isEmpty())
+            return new ResponseEntity<>(shipmentService.getShipments(), HttpStatus.NO_CONTENT);
+
         return new ResponseEntity<>(shipmentService.getShipments(), HttpStatus.OK);
     }
 
     @PutMapping("/{type}/{amount}")
-    public ResponseEntity<Optional<Shipment>> supply(@PathVariable GoodsType type, @PathVariable int amount){
-        Optional<Shipment> shipment = shipmentService.supply(type,amount);
+    public ResponseEntity<Optional<ShipmentDto>> supply(@PathVariable GoodsType type, @PathVariable int amount){
+        Optional<ShipmentDto> shipment = shipmentService.supply(type,amount);
+
         if(shipment.isPresent()){
             return new ResponseEntity<>(shipment, HttpStatus.OK);
         }

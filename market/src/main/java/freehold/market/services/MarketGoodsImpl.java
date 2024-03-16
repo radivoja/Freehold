@@ -2,10 +2,14 @@ package freehold.market.services;
 
 import freehold.market.model.GoodsType;
 import freehold.market.model.MarketGoods;
+import freehold.market.model.dto.MarketGoodsDto;
 import freehold.market.repository.MarketGoodsRepository;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,17 +17,21 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MarketGoodsImpl implements MarketGoodsService {
     private final MarketGoodsRepository marketGoodsRepository;
+    private final ModelMapper modelMapper;
 
     @Override
-    public MarketGoods getGoods(GoodsType type) {
+    public Optional<MarketGoodsDto> getGoods(GoodsType type) {
         Optional<MarketGoods> goods = marketGoodsRepository.findById(type);
-        return goods.orElseGet(MarketGoods::new);
+        if(goods.isPresent()) {
+            return Optional.of(modelMapper.map(goods, MarketGoodsDto.class));
+        }
+        return Optional.empty();
     }
 
-
     @Override
-    public List<MarketGoods> getAllGoods() {
-        return marketGoodsRepository.findAll();
+    public List<MarketGoodsDto> getAllGoods() {
+        Type listType = new TypeToken<List<MarketGoodsDto>>(){}.getType();
+        return modelMapper.map(marketGoodsRepository.findAll(), listType);
     }
 
     @Override

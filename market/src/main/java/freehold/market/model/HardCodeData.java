@@ -1,9 +1,7 @@
 package freehold.market.model;
 
-import freehold.market.client.ProductionClient;
 import freehold.market.repository.MarketGoodsRepository;
 import freehold.market.repository.ShipmentRepository;
-import freehold.market.services.ShipmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -21,11 +19,13 @@ public class HardCodeData implements CommandLineRunner {
         MarketGoods cucumber = MarketGoods.builder().
                 goodsType(GoodsType.CUCUMBER).
                 price(150).
+                quantity(50).
                 build();
 
         MarketGoods carrots = MarketGoods.builder().
                 goodsType(GoodsType.CARROTS).
                 price(100).
+                quantity(50).
                 build();
 
 
