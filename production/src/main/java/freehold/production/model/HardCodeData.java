@@ -15,13 +15,13 @@ public class HardCodeData implements CommandLineRunner {
 
         Goods cucumber = Goods.builder().
                 goodsType(GoodsType.CUCUMBER).
-                quantity(5).
+                quantity(50).
                 price(150).
                 build();
 
         Goods carrots = Goods.builder().
                 goodsType(GoodsType.CARROTS).
-                quantity(10).
+                quantity(100).
                 price(100).
                 build();
 

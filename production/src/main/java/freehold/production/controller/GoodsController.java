@@ -1,7 +1,7 @@
 package freehold.production.controller;
 
-import freehold.production.model.Goods;
 import freehold.production.model.GoodsType;
+import freehold.production.model.dto.GoodsDto;
 import freehold.production.services.GoodsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,11 +19,11 @@ public class GoodsController {
 
     @GetMapping("/{type}")
     public ResponseEntity getGoods(@PathVariable GoodsType type){
-        return new ResponseEntity<Goods>(goodsService.getGoods(type), HttpStatus.OK);
+        return new ResponseEntity<GoodsDto>(goodsService.getGoods(type), HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<List<Goods>> getAllGoods(){
+    public ResponseEntity<List<GoodsDto>> getAllGoods(){
         return new ResponseEntity(goodsService.getAllGoods(), HttpStatus.OK);
     }
 
@@ -39,13 +39,13 @@ public class GoodsController {
     }
 
     @PutMapping("/supply/{type}/{amount}")
-    public ResponseEntity<Optional<Goods>> supply(@PathVariable GoodsType type, @PathVariable int amount){
-        Optional<Goods> goods = goodsService.supply(type, amount);
-        if(goods.isPresent()){
-            return new ResponseEntity<>(goods, HttpStatus.OK);
+    public ResponseEntity<Optional<GoodsDto>> supply(@PathVariable GoodsType type, @PathVariable int amount){
+        Optional<GoodsDto> goodsDto = goodsService.supply(type, amount);
+        if(goodsDto.isPresent()){
+            return new ResponseEntity<>(goodsDto, HttpStatus.OK);
         }
         else{
-            return new ResponseEntity<>(goods, HttpStatus.NO_CONTENT);
+            return new ResponseEntity<>(goodsDto, HttpStatus.NO_CONTENT);
         }
     }
 }
