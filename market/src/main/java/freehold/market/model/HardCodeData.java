@@ -32,11 +32,9 @@ public class HardCodeData implements CommandLineRunner {
         marketGoodsRepository.save(cucumber);
         marketGoodsRepository.save(carrots);
 
-        MarketGoods marketGoods = MarketGoods.builder().price(150).goodsType(GoodsType.CUCUMBER).build();
-        marketGoodsRepository.save(marketGoods);
         marketGoodsRepository.findAll().stream().forEach(goods -> System.out.println(goods.toString()));
 
-        Shipment shipment = Shipment.builder().marketGoods(marketGoods).quantity(5).build();
+        Shipment shipment = Shipment.builder().marketGoods(cucumber).quantity(5).build();
 
         shipmentrepository.save(shipment);
 

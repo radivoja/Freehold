@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<link th:href="@{/style.css}" rel="stylesheet" />
+
+<head>
+    <title>Users List</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<header class="header">
+    <a class="dd-toggle" th:href="@{index}">Index</a>
+</header>
+
+
+<table class="table table-striped table-bordered table-hover">
+    <thead>
+    <tr>
+        <th>Goods Type</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Purchase</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="goods : ${list}">
+        <td th:text="${goods.goodsType}">Type</td>
+        <td th:text="${goods.price}">Type</td>
+        <td th:text="${goods.quantity}">Type</td>
+        <td><a th:href="@{/purchase(type=${goods.goodsType})}">Purchase</a></td>
+    </tr>
+    </tbody>
+</table>
+</body>

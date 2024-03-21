@@ -51,4 +51,20 @@ public class MarketGoodsImpl implements MarketGoodsService {
             return newMarketGoods;
         }
     }
+
+    @Override
+    public Optional<MarketGoodsDto> sell(GoodsType type) {
+        Optional<MarketGoods> marketGoods = marketGoodsRepository.findById(type);
+        if(marketGoods.isPresent()){
+            int amount = marketGoods.get().getQuantity();
+            if(amount > 0) {
+                marketGoods.get().setQuantity(amount-1);
+                marketGoodsRepository.save(marketGoods.get());
+                MarketGoodsDto marketGoodsDto = modelMapper.map(marketGoods, MarketGoodsDto.class);
+                return Optional.of(marketGoodsDto);
+            }
+        }
+
+        return Optional.empty();
+    }
 }

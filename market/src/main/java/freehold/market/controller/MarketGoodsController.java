@@ -6,10 +6,7 @@ import freehold.market.services.MarketGoodsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +28,19 @@ public class MarketGoodsController {
     @GetMapping
     public ResponseEntity<List<MarketGoodsDto>> getAllGoods(){
         return new ResponseEntity(marketGoodsService.getAllGoods(), HttpStatus.OK);
+    }
+
+    @PutMapping("/sell/{type}")
+    public ResponseEntity<MarketGoodsDto> sellGoods(@PathVariable GoodsType type){
+        Optional<MarketGoodsDto> marketGoodsDto = marketGoodsService.sell(type);
+
+        if(marketGoodsDto.isPresent()) {
+            return new ResponseEntity(marketGoodsDto, HttpStatus.OK);
+        }
+        else{
+            return new ResponseEntity(marketGoodsDto, HttpStatus.NO_CONTENT);
+
+        }
     }
 
 

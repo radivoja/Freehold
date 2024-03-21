@@ -14,4 +14,6 @@ public interface MarketGoodsService {
 
     MarketGoods stock(GoodsType type, int quantity, double price);
 
+    Optional<MarketGoodsDto> sell(GoodsType type);
+
 }
