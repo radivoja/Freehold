@@ -3,7 +3,7 @@ Freehold microservice:
 
 1. Production
 2. Market
-
+3. Customer
 
 # Getting Started
 
