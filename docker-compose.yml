@@ -1,0 +1,57 @@
+services:
+
+  register:
+    build:
+      context: .
+      args:
+        SERVICE: register
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  production:
+    build:
+      context: .
+      args:
+        SERVICE: production
+    ports:
+      - "8090:8090"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://register:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      register:
+        condition: service_healthy
+
+  market:
+    build:
+      context: .
+      args:
+        SERVICE: market
+    ports:
+      - "8091:8091"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://register:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      register:
+        condition: service_healthy
+
+  customer:
+    build:
+      context: .
+      args:
+        SERVICE: customer
+    ports:
+      - "8092:8092"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://register:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    depends_on:
+      register:
+        condition: service_healthy
