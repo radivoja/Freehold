@@ -1,5 +1,8 @@
 package freehold.market.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import freehold.market.messaging.ProductionOrderPublisher;
+import freehold.market.messaging.event.ProductionOrderEvent;
 import freehold.market.model.GoodsType;
 import freehold.market.model.dto.ShipmentDto;
 import freehold.market.services.ShipmentService;
@@ -9,13 +12,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/shipments")
 public class ShipmentController {
     private final ShipmentService shipmentService;
+    private final ProductionOrderPublisher productionOrderPublisher;
 
     @GetMapping
     public ResponseEntity<List<ShipmentDto>> findAllShipments(){
@@ -26,16 +31,25 @@ public class ShipmentController {
         return new ResponseEntity<>(shipmentService.getShipments(), HttpStatus.OK);
     }
 
-    @PutMapping("/{type}/{amount}")
-    public ResponseEntity<Optional<ShipmentDto>> supply(@PathVariable GoodsType type, @PathVariable int amount){
-        Optional<ShipmentDto> shipment = shipmentService.supply(type,amount);
+    /**
+     * Async supply — drops a message on the SQS queue and returns immediately.
+     * Production picks it up, processes it, and sends the result back via another queue.
+     */
+    @PutMapping("/async/{type}/{amount}")
+    public ResponseEntity<Map<String, String>> supplyAsync(
+            @PathVariable GoodsType type,
+            @PathVariable int amount) throws JsonProcessingException {
 
-        if(shipment.isPresent()){
-            return new ResponseEntity<>(shipment, HttpStatus.OK);
-        }
-        else {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
+        String orderId = UUID.randomUUID().toString();
+
+        ProductionOrderEvent event = new ProductionOrderEvent(orderId, type, amount);
+        productionOrderPublisher.publish(event);
+
+        return ResponseEntity.accepted().body(Map.of(
+                "orderId", orderId,
+                "status", "QUEUED",
+                "message", "Supply order queued for processing"
+        ));
     }
 
 }
