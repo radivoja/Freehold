@@ -2,6 +2,7 @@ package freehold.market.messaging;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import freehold.market.audit.AuditService;
 import freehold.market.messaging.event.ProductionResultEvent;
 import freehold.market.services.MarketGoodsService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class ProductionResultListener {
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final MarketGoodsService marketGoodsService;
+    private final AuditService auditService;
 
     @Value("${sqs.queue.production-results}")
     private String queueName;
@@ -45,8 +47,11 @@ public class ProductionResultListener {
 
 
     private void processMessage(Message message, String queueUrl) throws JsonProcessingException {
-        ProductionResultEvent result = objectMapper.readValue(
-                message.body(), ProductionResultEvent.class);
+        ProductionResultEvent result = objectMapper.readValue(message.body(), ProductionResultEvent.class);
+
+        String eventType = result.isFulfilled() ? Messages.LISTENER_ORDER_FULFILLED : Messages.LISTENER_ORDER_REJECTED;
+
+        auditService.log(eventType, result.getOrderId(), result.getGoodsType() + " x" + result.getQuantity());
 
         if (result.isFulfilled()) {
             marketGoodsService.stock(

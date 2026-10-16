@@ -19,7 +19,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      SERVICES: sqs
+      SERVICES: sqs,dynamodb
       DEFAULT_REGION: us-east-1
     volumes:
       - ./localstack:/etc/localstack/init/ready.d
@@ -79,3 +79,16 @@ services:
     depends_on:
       register:
         condition: service_healthy
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    container_name: dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      DYNAMO_ENDPOINT: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on:
+      - localstack

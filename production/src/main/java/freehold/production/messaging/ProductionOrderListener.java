@@ -2,6 +2,7 @@ package freehold.production.messaging;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import freehold.production.audit.AuditService;
 import freehold.production.messaging.event.ProductionOrderEvent;
 import freehold.production.messaging.event.ProductionResultEvent;
 import freehold.production.model.dto.GoodsDto;
@@ -23,10 +24,12 @@ import java.util.Optional;
 @Component
 public class ProductionOrderListener {
     private static final long DELAY_VALUE = 5000;
+    private static final String AUDIT_MESSAGE = "ORDER_RECEIVED";
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final GoodsService goodsService;
     private final ProductionResultPublisher resultPublisher;
+    private final AuditService auditService;
 
     @Value("${sqs.queue.production-orders}")
     private String queueName;
@@ -50,6 +53,7 @@ public class ProductionOrderListener {
 
     private void processMessage(Message message, String queueUrl) throws JsonProcessingException {
         ProductionOrderEvent order  = objectMapper.readValue(message.body(), ProductionOrderEvent .class);
+        auditService.log(AUDIT_MESSAGE, order.getOrderId(), order.getGoodsType() + " x" + order.getQuantity());
 
         Optional<GoodsDto> result = goodsService.supply(order.getGoodsType(), order.getQuantity());
 
