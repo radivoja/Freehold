@@ -24,4 +24,8 @@ awslocal dynamodb create-table \
 echo "DynamoDB tables created:"
 awslocal dynamodb list-tables
 
+# --- S3 Buckets ---
+echo "Creating S3 buckets..."
+awslocal s3 mb s3://freehold-invoices
+
 echo "=== LocalStack initialization complete ==="

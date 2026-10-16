@@ -3,6 +3,7 @@ package freehold.market.messaging;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import freehold.market.audit.AuditService;
+import freehold.market.invoice.InvoiceService;
 import freehold.market.messaging.event.ProductionResultEvent;
 import freehold.market.services.MarketGoodsService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class ProductionResultListener {
     private final ObjectMapper objectMapper;
     private final MarketGoodsService marketGoodsService;
     private final AuditService auditService;
+    private final InvoiceService invoiceService;
 
     @Value("${sqs.queue.production-results}")
     private String queueName;
@@ -60,6 +62,13 @@ public class ProductionResultListener {
                     result.getPrice()
             );
         }
+
+        invoiceService.generateAndUpload(
+                result.getOrderId(),
+                result.getGoodsType().name(),
+                result.getQuantity(),
+                result.getPrice()
+        );
 
         sqsClient.deleteMessage(DeleteMessageRequest.builder()
                 .queueUrl(queueUrl)
