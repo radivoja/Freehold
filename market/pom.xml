@@ -89,6 +89,11 @@
 			<artifactId>s3</artifactId>
 		</dependency>
 
+		<!-- AWS SNS -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>sns</artifactId>
+		</dependency>
     </dependencies>
 
 	<dependencyManagement>

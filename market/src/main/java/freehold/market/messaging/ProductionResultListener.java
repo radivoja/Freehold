@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import freehold.market.audit.AuditService;
 import freehold.market.invoice.InvoiceService;
 import freehold.market.messaging.event.ProductionResultEvent;
+import freehold.market.notification.NotificationService;
 import freehold.market.services.MarketGoodsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ public class ProductionResultListener {
     private final MarketGoodsService marketGoodsService;
     private final AuditService auditService;
     private final InvoiceService invoiceService;
+    private final NotificationService notificationService;
 
     @Value("${sqs.queue.production-results}")
     private String queueName;
@@ -68,6 +70,13 @@ public class ProductionResultListener {
                 result.getGoodsType().name(),
                 result.getQuantity(),
                 result.getPrice()
+        );
+
+        notificationService.notifyOrderResult(
+                result.getOrderId(),
+                result.getGoodsType().name(),
+                result.getQuantity(),
+                result.isFulfilled()
         );
 
         sqsClient.deleteMessage(DeleteMessageRequest.builder()

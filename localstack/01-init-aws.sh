@@ -28,4 +28,8 @@ awslocal dynamodb list-tables
 echo "Creating S3 buckets..."
 awslocal s3 mb s3://freehold-invoices
 
+# --- SNS Topics ---
+echo "Creating SNS topics..."
+awslocal sns create-topic --name order-notifications
+
 echo "=== LocalStack initialization complete ==="
