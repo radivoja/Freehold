@@ -17,7 +17,7 @@ public class ProductionResultPublisher {
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${sqs.queue.production-orders}")
+    @Value("${sqs.queue.production-results}")
     private String queueName;
 
     public void publish(ProductionResultEvent event) throws JsonProcessingException {

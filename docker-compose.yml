@@ -14,6 +14,22 @@ services:
       retries: 15
       start_period: 30s
 
+  localstack:
+    image: localstack/localstack:3.4
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: sqs
+      DEFAULT_REGION: us-east-1
+    volumes:
+      - ./localstack:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
   production:
     build:
       context: .
@@ -24,8 +40,12 @@ services:
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://register:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      AWS_ENDPOINT: http://localstack:4566
+      AWS_REGION: us-east-1
     depends_on:
       register:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
 
   market:
@@ -38,8 +58,12 @@ services:
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://register:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      AWS_ENDPOINT: http://localstack:4566
+      AWS_REGION: us-east-1
     depends_on:
       register:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
 
   customer:

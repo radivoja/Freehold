@@ -28,7 +28,7 @@ public class ProductionOrderListener {
     private final GoodsService goodsService;
     private final ProductionResultPublisher resultPublisher;
 
-    @Value("${sqs.queue.production-results}")
+    @Value("${sqs.queue.production-orders}")
     private String queueName;
 
     @Scheduled(fixedDelay = DELAY_VALUE)
