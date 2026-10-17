@@ -41,6 +41,8 @@ Spring Boot / Spring Cloud microservices project demonstrating service discovery
 - **Spring Boot 3.2.3** / **Spring Cloud 2023.0.0**
 - **Spring Cloud Netflix Eureka** for service discovery
 - **Spring Cloud OpenFeign** for declarative REST clients
+- **Micrometer** with CloudWatch2 registry for metrics collection
+- **Grafana 10.4.0** for metrics visualization
 - **H2** embedded databases
 - **Lombok** for boilerplate reduction
 - **ModelMapper** for DTO mapping
@@ -51,12 +53,13 @@ Spring Boot / Spring Cloud microservices project demonstrating service discovery
 
 All AWS services run locally via **LocalStack** (no AWS account needed).
 
-| Service  | Usage                                                                |
-|----------|----------------------------------------------------------------------|
-| SQS      | Async messaging between market and production (two queues)           |
-| DynamoDB | Audit log with composite key (service#timestamp) tracking all events |
-| S3       | Invoice storage (JSON documents in `freehold-invoices` bucket)       |
-| SNS      | Order status notifications (topic: `order-notifications`)            |
+| Service    | Usage                                                                |
+|------------|----------------------------------------------------------------------|
+| SQS        | Async messaging between market and production (two queues)           |
+| DynamoDB   | Audit log with composite key (service#timestamp) tracking all events |
+| S3         | Invoice storage (JSON documents in `freehold-invoices` bucket)       |
+| SNS        | Order status notifications (topic: `order-notifications`)            |
+| CloudWatch | Custom business metrics and JVM metrics from both services           |
 
 ### SQS Message Flow
 
@@ -64,6 +67,35 @@ All AWS services run locally via **LocalStack** (no AWS account needed).
 2. Production picks it up, checks stock, and fulfills or rejects
 3. Production publishes result to `production-results` queue
 4. Market consumes the result, stocks goods (if fulfilled), generates invoice, logs audit event, and sends notification
+
+## Observability
+
+Both services publish metrics to **CloudWatch** (via LocalStack) using **Micrometer CloudWatch2 registry**. A pre-provisioned **Grafana** dashboard visualizes all metrics in real time.
+
+### Metrics
+
+| Metric                           | Service    | Type    | Description                                    |
+|----------------------------------|------------|---------|------------------------------------------------|
+| sales.completed.count            | market     | Counter | Direct sell transactions                       |
+| orders.placed.count              | market     | Counter | Async supply orders queued                     |
+| orders.fulfilled.count           | market     | Counter | Orders successfully fulfilled                  |
+| orders.rejected.count            | market     | Counter | Orders rejected (insufficient stock)           |
+| orders.fulfillment.latency       | market     | Timer   | End-to-end time from order placement to result |
+| production.orders.received.count | production | Counter | Orders received by production                  |
+| production.orders.completed.count| production | Counter | Orders completed by production                 |
+| production.orders.rejected.count | production | Counter | Orders rejected by production                  |
+| production.processing.latency    | production | Timer   | Time to process a single order                 |
+
+### Grafana Dashboard
+
+Available at **http://localhost:3000** (admin/admin) with 8 panels:
+
+- Sales Completed, Orders Fulfilled/Rejected
+- Fulfillment Latency, Production Processing Latency
+- Production Orders Received, Production Completed vs Rejected
+- JVM Heap Memory Used
+
+The dashboard and CloudWatch data source are auto-provisioned via files in `grafana/`.
 
 ## Prerequisites
 
@@ -131,11 +163,12 @@ curl http://localhost:8091/market/WOOD
 
 ## Admin UIs
 
-| UI               | Port | Description                        |
-|------------------|------|------------------------------------|
-| Eureka Dashboard | 8761 | Service registry and health status |
-| DynamoDB Admin   | 8001 | Browse audit log table             |
-| S3 Browser       | 8002 | Browse invoice files in S3 buckets |
+| UI               | Port | Description                            |
+|------------------|------|----------------------------------------|
+| Eureka Dashboard | 8761 | Service registry and health status     |
+| Grafana          | 3000 | CloudWatch metrics dashboard           |
+| DynamoDB Admin   | 8001 | Browse audit log table                 |
+| S3 Browser       | 8002 | Browse invoice files in S3 buckets     |
 
 ## Project Structure
 
@@ -145,12 +178,21 @@ Freehold/
 ├── docker-compose.yml          # Full stack orchestration
 ├── localstack/
 │   └── 01-init-aws.sh          # Creates SQS queues, DynamoDB table, S3 bucket, SNS topic
+├── grafana/
+│   ├── dashboards/
+│   │   └── freehold.json       # Pre-provisioned dashboard (8 panels)
+│   └── provisioning/
+│       ├── dashboards/
+│       │   └── dashboards.yml  # Dashboard provisioning config
+│       └── datasources/
+│           └── cloudwatch.yml  # CloudWatch data source config
 ├── register/                   # Eureka server
 ├── production/                 # Production service (Java)
 │   └── src/main/java/freehold/production/
-│       ├── config/             # AWS client configuration
+│       ├── config/             # AWS client and CloudWatch metrics configuration
 │       ├── controller/         # REST endpoints
 │       ├── messaging/          # SQS publishers and listeners
+│       ├── metrics/            # CloudWatch metrics service
 │       ├── model/              # Entities, DTOs, enums
 │       ├── repository/         # JPA repositories
 │       └── services/           # Business logic
@@ -158,10 +200,11 @@ Freehold/
 │   └── src/main/java/freehold/market/
 │       ├── audit/              # DynamoDB audit logging
 │       ├── client/             # Feign clients
-│       ├── config/             # AWS client configuration
+│       ├── config/             # AWS client and CloudWatch metrics configuration
 │       ├── controller/         # REST endpoints
 │       ├── invoice/            # S3 invoice generation
 │       ├── messaging/          # SQS publishers and listeners
+│       ├── metrics/            # CloudWatch metrics and latency tracking
 │       ├── model/              # Entities, DTOs, enums
 │       ├── notification/       # SNS order notifications
 │       ├── repository/         # JPA repositories
