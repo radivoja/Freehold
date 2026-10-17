@@ -1,5 +1,6 @@
 package freehold.market.services;
 
+import freehold.market.metrics.MetricsService;
 import freehold.market.model.GoodsType;
 import freehold.market.model.MarketGoods;
 import freehold.market.model.dto.MarketGoodsDto;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class MarketGoodsImpl implements MarketGoodsService {
     private final MarketGoodsRepository marketGoodsRepository;
     private final ModelMapper modelMapper;
+    private final MetricsService metricsService;
 
     @Override
     public Optional<MarketGoodsDto> getGoods(GoodsType type) {
@@ -60,6 +62,7 @@ public class MarketGoodsImpl implements MarketGoodsService {
             if(amount > 0) {
                 marketGoods.get().setQuantity(amount-1);
                 marketGoodsRepository.save(marketGoods.get());
+                metricsService.recordSale(type);
                 MarketGoodsDto marketGoodsDto = modelMapper.map(marketGoods, MarketGoodsDto.class);
                 return Optional.of(marketGoodsDto);
             }

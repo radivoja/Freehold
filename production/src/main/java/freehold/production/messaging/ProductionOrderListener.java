@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import freehold.production.audit.AuditService;
 import freehold.production.messaging.event.ProductionOrderEvent;
 import freehold.production.messaging.event.ProductionResultEvent;
+import freehold.production.metrics.MetricsService;
 import freehold.production.model.dto.GoodsDto;
 import freehold.production.services.GoodsService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class ProductionOrderListener {
     private final GoodsService goodsService;
     private final ProductionResultPublisher resultPublisher;
     private final AuditService auditService;
+    private final MetricsService metricsService;
 
     @Value("${sqs.queue.production-orders}")
     private String queueName;
@@ -54,6 +56,10 @@ public class ProductionOrderListener {
     private void processMessage(Message message, String queueUrl) throws JsonProcessingException {
         ProductionOrderEvent order  = objectMapper.readValue(message.body(), ProductionOrderEvent .class);
         auditService.log(AUDIT_MESSAGE, order.getOrderId(), order.getGoodsType() + " x" + order.getQuantity());
+
+
+        long startMillis = System.currentTimeMillis();
+        metricsService.recordProductionReceived(order.getGoodsType(), order.getQuantity());
 
         Optional<GoodsDto> result = goodsService.supply(order.getGoodsType(), order.getQuantity());
 

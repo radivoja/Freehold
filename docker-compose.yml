@@ -19,7 +19,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      SERVICES: sqs,dynamodb,s3,sns
+      SERVICES: sqs,dynamodb,s3,sns,cloudwatch
       DEFAULT_REGION: us-east-1
     volumes:
       - ./localstack:/etc/localstack/init/ready.d

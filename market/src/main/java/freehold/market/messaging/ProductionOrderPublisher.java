@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import freehold.market.audit.AuditService;
 import freehold.market.messaging.event.ProductionOrderEvent;
+import freehold.market.metrics.MetricsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ public class ProductionOrderPublisher {
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
+    private final MetricsService metricsService;
 
     @Value("${sqs.queue.production-orders}")
     private String queueName;
@@ -32,6 +34,7 @@ public class ProductionOrderPublisher {
                 .build());
 
         auditService.log(Messages.PUBLISHER_ORDER, event.getOrderId(), event.getGoodsType() + " x" + event.getQuantity());
+        metricsService.recordOrderPlaced(event.getGoodsType(), event.getQuantity());
     }
 
 }

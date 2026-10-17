@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import freehold.market.audit.AuditService;
 import freehold.market.invoice.InvoiceService;
 import freehold.market.messaging.event.ProductionResultEvent;
+import freehold.market.metrics.MetricsService;
 import freehold.market.notification.NotificationService;
 import freehold.market.services.MarketGoodsService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class ProductionResultListener {
     private final AuditService auditService;
     private final InvoiceService invoiceService;
     private final NotificationService notificationService;
+    private final MetricsService metricsService;
 
     @Value("${sqs.queue.production-results}")
     private String queueName;
@@ -56,6 +58,12 @@ public class ProductionResultListener {
         String eventType = result.isFulfilled() ? Messages.LISTENER_ORDER_FULFILLED : Messages.LISTENER_ORDER_REJECTED;
 
         auditService.log(eventType, result.getOrderId(), result.getGoodsType() + " x" + result.getQuantity());
+
+        if (result.isFulfilled()) {
+            metricsService.recordOrderFulfilled(result.getGoodsType(), result.getQuantity());
+        } else {
+            metricsService.recordOrderRejected(result.getGoodsType());
+        }
 
         if (result.isFulfilled()) {
             marketGoodsService.stock(

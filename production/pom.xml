@@ -88,6 +88,18 @@
 			<artifactId>flyway-core</artifactId>
 		</dependency>
 
+		<!-- AWS CloudWatch -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>cloudwatch</artifactId>
+		</dependency>
+
+		<!-- Micrometer CloudWatch registry -->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-cloudwatch2</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<dependencyManagement>
