@@ -5,9 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import freehold.market.audit.AuditService;
 import freehold.market.invoice.InvoiceService;
 import freehold.market.messaging.event.ProductionResultEvent;
-import freehold.market.metrics.MetricsService;
+import freehold.market.metrics.OrderLatencyTracker;
 import freehold.market.notification.NotificationService;
 import freehold.market.services.MarketGoodsService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -30,7 +31,8 @@ public class ProductionResultListener {
     private final AuditService auditService;
     private final InvoiceService invoiceService;
     private final NotificationService notificationService;
-    private final MetricsService metricsService;
+    private final MeterRegistry meterRegistry;
+    private final OrderLatencyTracker orderLatencyTracker;
 
     @Value("${sqs.queue.production-results}")
     private String queueName;
@@ -51,7 +53,6 @@ public class ProductionResultListener {
         }
     }
 
-
     private void processMessage(Message message, String queueUrl) throws JsonProcessingException {
         ProductionResultEvent result = objectMapper.readValue(message.body(), ProductionResultEvent.class);
 
@@ -60,18 +61,17 @@ public class ProductionResultListener {
         auditService.log(eventType, result.getOrderId(), result.getGoodsType() + " x" + result.getQuantity());
 
         if (result.isFulfilled()) {
-            metricsService.recordOrderFulfilled(result.getGoodsType(), result.getQuantity());
-        } else {
-            metricsService.recordOrderRejected(result.getGoodsType());
-        }
-
-        if (result.isFulfilled()) {
             marketGoodsService.stock(
                     result.getGoodsType(),
                     result.getQuantity(),
                     result.getPrice()
             );
+            meterRegistry.counter("orders.fulfilled.count", "goods_type", result.getGoodsType().name()).increment();
+        } else {
+            meterRegistry.counter("orders.rejected.count", "goods_type", result.getGoodsType().name()).increment();
         }
+
+        orderLatencyTracker.orderCompleted(result.getOrderId(), result.getGoodsType().name());
 
         invoiceService.generateAndUpload(
                 result.getOrderId(),
@@ -92,5 +92,4 @@ public class ProductionResultListener {
                 .receiptHandle(message.receiptHandle())
                 .build());
     }
-
 }

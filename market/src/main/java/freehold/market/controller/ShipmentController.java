@@ -3,9 +3,11 @@ package freehold.market.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import freehold.market.messaging.ProductionOrderPublisher;
 import freehold.market.messaging.event.ProductionOrderEvent;
+import freehold.market.metrics.OrderLatencyTracker;
 import freehold.market.model.GoodsType;
 import freehold.market.model.dto.ShipmentDto;
 import freehold.market.services.ShipmentService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,8 @@ import java.util.UUID;
 public class ShipmentController {
     private final ShipmentService shipmentService;
     private final ProductionOrderPublisher productionOrderPublisher;
+    private final MeterRegistry meterRegistry;
+    private final OrderLatencyTracker orderLatencyTracker;
 
     @GetMapping
     public ResponseEntity<List<ShipmentDto>> findAllShipments(){
@@ -44,6 +48,9 @@ public class ShipmentController {
 
         ProductionOrderEvent event = new ProductionOrderEvent(orderId, type, amount);
         productionOrderPublisher.publish(event);
+
+        meterRegistry.counter("orders.placed.count", "goods_type", type.name()).increment();
+        orderLatencyTracker.orderPlaced(orderId);
 
         return ResponseEntity.accepted().body(Map.of(
                 "orderId", orderId,

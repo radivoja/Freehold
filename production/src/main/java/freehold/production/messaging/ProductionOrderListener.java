@@ -8,6 +8,7 @@ import freehold.production.messaging.event.ProductionResultEvent;
 import freehold.production.metrics.MetricsService;
 import freehold.production.model.dto.GoodsDto;
 import freehold.production.services.GoodsService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,6 +19,8 @@ import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +35,7 @@ public class ProductionOrderListener {
     private final ProductionResultPublisher resultPublisher;
     private final AuditService auditService;
     private final MetricsService metricsService;
+    private final MeterRegistry meterRegistry;
 
     @Value("${sqs.queue.production-orders}")
     private String queueName;
@@ -54,6 +58,7 @@ public class ProductionOrderListener {
 
 
     private void processMessage(Message message, String queueUrl) throws JsonProcessingException {
+        Instant start = Instant.now();
         ProductionOrderEvent order  = objectMapper.readValue(message.body(), ProductionOrderEvent .class);
         auditService.log(AUDIT_MESSAGE, order.getOrderId(), order.getGoodsType() + " x" + order.getQuantity());
 
@@ -85,6 +90,11 @@ public class ProductionOrderListener {
         }
 
         resultPublisher.publish(resultEvent);
+
+        long millis = Duration.between(start, Instant.now()).toMillis();
+        meterRegistry.timer("production.processing.latency",
+                "goods_type", order.getGoodsType().name()).record(Duration.ofMillis(millis));
+
 
         sqsClient.deleteMessage(DeleteMessageRequest.builder()
                 .queueUrl(queueUrl)
