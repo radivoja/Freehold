@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 echo "=== Initializing AWS resources on LocalStack ==="
 
 # --- SQS Queues ---

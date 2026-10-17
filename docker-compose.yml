@@ -24,7 +24,7 @@ services:
     volumes:
       - ./localstack:/etc/localstack/init/ready.d
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/init/ready | grep -q SUCCESSFUL"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -107,3 +107,10 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
+
+  customer-frontend:
+    build: ./customer/frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - customer
