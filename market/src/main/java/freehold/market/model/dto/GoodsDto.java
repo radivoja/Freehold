@@ -1,6 +1,6 @@
 package freehold.market.model.dto;
 
-import freehold.market.model.GoodsType;
+import freehold.market.model.GoodsSubcategory;
 import lombok.Data;
 
 import java.sql.Timestamp;
@@ -8,7 +8,7 @@ import java.sql.Timestamp;
 public class GoodsDto {
 
 
-    private GoodsType goodsType;
+    private GoodsSubcategory goodsType;
 
 
     private Timestamp timestamp;

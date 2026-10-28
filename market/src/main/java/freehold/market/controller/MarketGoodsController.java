@@ -1,6 +1,6 @@
 package freehold.market.controller;
 
-import freehold.market.model.GoodsType;
+import freehold.market.model.GoodsSubcategory;
 import freehold.market.model.dto.MarketGoodsDto;
 import freehold.market.services.MarketGoodsService;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class MarketGoodsController {
     private final MarketGoodsService marketGoodsService;
 
     @GetMapping("/{type}")
-    public ResponseEntity<String> getGoods(@PathVariable GoodsType type){
+    public ResponseEntity<String> getGoods(@PathVariable GoodsSubcategory type){
         Optional<MarketGoodsDto> marketGoodsDto = marketGoodsService.getGoods(type);
         if(marketGoodsDto.isPresent())
             return new ResponseEntity(marketGoodsDto.get(), HttpStatus.OK);
@@ -31,7 +31,7 @@ public class MarketGoodsController {
     }
 
     @PutMapping("/sell/{type}")
-    public ResponseEntity<MarketGoodsDto> sellGoods(@PathVariable GoodsType type){
+    public ResponseEntity<MarketGoodsDto> sellGoods(@PathVariable GoodsSubcategory type){
         Optional<MarketGoodsDto> marketGoodsDto = marketGoodsService.sell(type);
 
         if(marketGoodsDto.isPresent()) {

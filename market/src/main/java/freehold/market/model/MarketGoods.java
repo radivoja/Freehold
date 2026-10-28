@@ -21,7 +21,7 @@ import java.sql.Timestamp;
 public class MarketGoods {
     @Id
     @Enumerated(EnumType.STRING)
-    private GoodsType goodsType;
+    private GoodsSubcategory goodsType;
 
     @UpdateTimestamp
     private Timestamp updateTimestamp;

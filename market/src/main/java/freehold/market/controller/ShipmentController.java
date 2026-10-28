@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import freehold.market.messaging.ProductionOrderPublisher;
 import freehold.market.messaging.event.ProductionOrderEvent;
 import freehold.market.metrics.OrderLatencyTracker;
-import freehold.market.model.GoodsType;
+import freehold.market.model.GoodsSubcategory;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +30,7 @@ public class ShipmentController {
      */
     @PutMapping("/async/{type}/{amount}")
     public ResponseEntity<Map<String, String>> supplyAsync(
-            @PathVariable GoodsType type,
+            @PathVariable GoodsSubcategory type,
             @PathVariable int amount) throws JsonProcessingException {
 
         String orderId = UUID.randomUUID().toString();

@@ -1,7 +1,7 @@
 package freehold.market.messaging.event;
 
 
-import freehold.market.model.GoodsType;
+import freehold.market.model.GoodsSubcategory;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -9,6 +9,6 @@ import lombok.Data;
 @Data
 public class ProductionOrderEvent {
     private String OrderId;
-    private GoodsType goodsType;
+    private GoodsSubcategory goodsType;
     private int quantity;
 }

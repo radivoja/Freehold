@@ -1,7 +1,7 @@
 package freehold.market.services;
 
 import freehold.market.metrics.MetricsService;
-import freehold.market.model.GoodsType;
+import freehold.market.model.GoodsSubcategory;
 import freehold.market.model.MarketGoods;
 import freehold.market.model.dto.MarketGoodsDto;
 import freehold.market.repository.MarketGoodsRepository;
@@ -22,7 +22,7 @@ public class MarketGoodsImpl implements MarketGoodsService {
     private final MetricsService metricsService;
 
     @Override
-    public Optional<MarketGoodsDto> getGoods(GoodsType type) {
+    public Optional<MarketGoodsDto> getGoods(GoodsSubcategory type) {
         Optional<MarketGoods> goods = marketGoodsRepository.findById(type);
         if(goods.isPresent()) {
             return Optional.of(modelMapper.map(goods, MarketGoodsDto.class));
@@ -37,7 +37,7 @@ public class MarketGoodsImpl implements MarketGoodsService {
     }
 
     @Override
-    public MarketGoods stock(GoodsType type, int amount, double price) {
+    public MarketGoods stock(GoodsSubcategory type, int amount, double price) {
         Optional<MarketGoods> marketGoods = marketGoodsRepository.findById(type);
         if(marketGoods.isPresent()){
             marketGoods.get().setQuantity(marketGoods.get().getQuantity() + amount);
@@ -55,7 +55,7 @@ public class MarketGoodsImpl implements MarketGoodsService {
     }
 
     @Override
-    public Optional<MarketGoodsDto> sell(GoodsType type) {
+    public Optional<MarketGoodsDto> sell(GoodsSubcategory type) {
         Optional<MarketGoods> marketGoods = marketGoodsRepository.findById(type);
         if(marketGoods.isPresent()){
             int amount = marketGoods.get().getQuantity();

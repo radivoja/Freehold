@@ -1,6 +1,6 @@
 package freehold.market.metrics;
 
-import freehold.market.model.GoodsType;
+import freehold.market.model.GoodsSubcategory;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -15,7 +15,7 @@ public class MetricsService {
 
     private final MeterRegistry registry;
 
-    public void recordOrderPlaced(GoodsType type, int quantity) {
+    public void recordOrderPlaced(GoodsSubcategory type, int quantity) {
         Counter.builder("orders.placed")
                 .tag("goods_type", type.name())
                 .description("Number of supply orders placed")
@@ -23,7 +23,7 @@ public class MetricsService {
                 .increment();
     }
 
-    public void recordOrderFulfilled(GoodsType type, int quantity) {
+    public void recordOrderFulfilled(GoodsSubcategory type, int quantity) {
         Counter.builder("orders.fulfilled")
                 .tag("goods_type", type.name())
                 .description("Number of supply orders fulfilled")
@@ -31,7 +31,7 @@ public class MetricsService {
                 .increment();
     }
 
-    public void recordOrderRejected(GoodsType type) {
+    public void recordOrderRejected(GoodsSubcategory type) {
         Counter.builder("orders.rejected")
                 .tag("goods_type", type.name())
                 .description("Number of supply orders rejected")
@@ -39,7 +39,7 @@ public class MetricsService {
                 .increment();
     }
 
-    public void recordSale(GoodsType type) {
+    public void recordSale(GoodsSubcategory type) {
         Counter.builder("sales.completed")
                 .tag("goods_type", type.name())
                 .description("Number of goods sold to customers")
