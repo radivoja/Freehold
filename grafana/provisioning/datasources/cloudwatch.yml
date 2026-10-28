@@ -9,7 +9,7 @@ datasources:
       authType: keys
       defaultRegion: us-east-1
       endpoint: http://localstack:4566
-      customMetricsNamespaces: "freehold/market,freehold/production"
+      customMetricsNamespaces: "freehold/marketplace,freehold/production"
     secureJsonData:
       accessKey: test
       secretKey: test

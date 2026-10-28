@@ -62,11 +62,11 @@ services:
       postgres:
         condition: service_healthy
 
-  market:
+  marketplace:
     build:
       context: .
       args:
-        SERVICE: market
+        SERVICE: marketplace
     ports:
       - "8091:8091"
     environment:

@@ -64,7 +64,7 @@ MARKET_INT=$($AWS apigatewayv2 create-integration \
   --api-id $API_ID \
   --integration-type HTTP_PROXY \
   --integration-method ANY \
-  --integration-uri http://market:8091/{proxy} \
+  --integration-uri http://marketplace:8091/{proxy} \
   --payload-format-version 1.0 \
   --query 'IntegrationId' --output text)
 echo "Created Market integration: $MARKET_INT"
