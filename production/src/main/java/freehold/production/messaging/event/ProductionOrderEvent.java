@@ -1,13 +1,16 @@
 package freehold.production.messaging.event;
 
-import freehold.production.model.GoodsType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class ProductionOrderEvent {
-    private String OrderId;
-    private GoodsType goodsType;
+    private String orderId;
+    private UUID goodsId;
     private int quantity;
 }

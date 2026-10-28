@@ -6,9 +6,8 @@ import freehold.production.audit.AuditService;
 import freehold.production.messaging.event.ProductionOrderEvent;
 import freehold.production.messaging.event.ProductionResultEvent;
 import freehold.production.metrics.MetricsService;
-import freehold.production.model.dto.GoodsDto;
-import freehold.production.services.GoodsService;
-import io.micrometer.core.instrument.MeterRegistry;
+import freehold.production.goods.GoodsDto;
+import freehold.production.goods.GoodsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,6 +18,7 @@ import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -35,7 +35,6 @@ public class ProductionOrderListener {
     private final ProductionResultPublisher resultPublisher;
     private final AuditService auditService;
     private final MetricsService metricsService;
-    private final MeterRegistry meterRegistry;
 
     @Value("${sqs.queue.production-orders}")
     private String queueName;
@@ -56,49 +55,49 @@ public class ProductionOrderListener {
         }
     }
 
-
     private void processMessage(Message message, String queueUrl) throws JsonProcessingException {
         Instant start = Instant.now();
-        ProductionOrderEvent order  = objectMapper.readValue(message.body(), ProductionOrderEvent .class);
-        auditService.log(AUDIT_MESSAGE, order.getOrderId(), order.getGoodsType() + " x" + order.getQuantity());
+        ProductionOrderEvent order = objectMapper.readValue(message.body(), ProductionOrderEvent.class);
+        auditService.log(AUDIT_MESSAGE, order.getOrderId(), order.getGoodsId() + " x" + order.getQuantity());
 
-
-        long startMillis = System.currentTimeMillis();
-        metricsService.recordProductionReceived(order.getGoodsType(), order.getQuantity());
-
-        Optional<GoodsDto> result = goodsService.supply(order.getGoodsType(), order.getQuantity());
-
-        ProductionResultEvent resultEvent;
-        if (result.isPresent()) {
-            resultEvent = new ProductionResultEvent(
-                    order.getOrderId(),
-                    order.getGoodsType(),
-                    order.getQuantity(),
-                    result.get().getPrice(),
-                    true,
-                    Messages.SUCCESS
-            );
-        } else {
-            resultEvent = new ProductionResultEvent(
-                    order.getOrderId(),
-                    order.getGoodsType(),
-                    order.getQuantity(),
-                    0,
-                    false,
-                    Messages.FAILURE
-            );
+        GoodsDto lookedUp = goodsService.getGoods(order.getGoodsId());
+        if (lookedUp.getSubcategory() != null) {
+            metricsService.recordProductionReceived(lookedUp.getSubcategory(), order.getQuantity());
         }
 
-        resultPublisher.publish(resultEvent);
+        Optional<GoodsDto> result = goodsService.supply(order.getGoodsId(), order.getQuantity());
 
-        long millis = Duration.between(start, Instant.now()).toMillis();
-        meterRegistry.timer("production.processing.latency",
-                "goods_type", order.getGoodsType().name()).record(Duration.ofMillis(millis));
+        resultPublisher.publish(buildResultEvent(order, result));
 
+        if (lookedUp.getSubcategory() != null) {
+            long millis = Duration.between(start, Instant.now()).toMillis();
+            metricsService.recordProductionLatency(lookedUp.getSubcategory(), start.toEpochMilli());
+        }
 
         sqsClient.deleteMessage(DeleteMessageRequest.builder()
                 .queueUrl(queueUrl)
                 .receiptHandle(message.receiptHandle())
                 .build());
+    }
+
+    private ProductionResultEvent buildResultEvent(ProductionOrderEvent order, Optional<GoodsDto> result) {
+        if (result.isPresent()) {
+            return new ProductionResultEvent(
+                    order.getOrderId(),
+                    order.getGoodsId(),
+                    order.getQuantity(),
+                    result.get().getPrice(),
+                    true,
+                    Messages.SUCCESS
+            );
+        }
+        return new ProductionResultEvent(
+                order.getOrderId(),
+                order.getGoodsId(),
+                order.getQuantity(),
+                BigDecimal.ZERO,
+                false,
+                Messages.FAILURE
+        );
     }
 }

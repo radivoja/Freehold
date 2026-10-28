@@ -1,16 +1,20 @@
 package freehold.production.messaging.event;
 
-import freehold.production.model.GoodsType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class ProductionResultEvent {
     private String orderId;
-    private GoodsType goodsType;
+    private UUID goodsId;
     private int quantity;
-    private int price;
+    private BigDecimal price;
     private boolean fulfilled;
     private String message;
 }

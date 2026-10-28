@@ -1,6 +1,6 @@
 package freehold.production.metrics;
 
-import freehold.production.model.GoodsType;
+import freehold.production.goods.GoodsSubcategory;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -14,30 +14,30 @@ import java.util.concurrent.TimeUnit;
 public class MetricsService {
     private final MeterRegistry registry;
 
-    public void recordProductionReceived(GoodsType type, int quantity) {
+    public void recordProductionReceived(GoodsSubcategory subcategory, int quantity) {
         Counter.builder("production.orders.received")
-                .tag("goods_type", type.name())
+                .tag("subcategory", subcategory.name())
                 .description("Production orders received from market")
                 .register(registry).increment();
     }
 
-    public void recordProductionCompleted(GoodsType type, int quantity) {
+    public void recordProductionCompleted(GoodsSubcategory subcategory, int quantity) {
         Counter.builder("production.orders.completed")
-                .tag("goods_type", type.name())
+                .tag("subcategory", subcategory.name())
                 .description("Production orders successfully completed")
                 .register(registry).increment();
     }
 
-    public void recordProductionRejected(GoodsType type) {
+    public void recordProductionRejected(GoodsSubcategory subcategory) {
         Counter.builder("production.orders.rejected")
-                .tag("goods_type", type.name())
+                .tag("subcategory", subcategory.name())
                 .description("Production orders rejected (insufficient capacity)")
                 .register(registry).increment();
     }
 
-    public void recordProductionLatency(GoodsType type, long startMillis) {
+    public void recordProductionLatency(GoodsSubcategory subcategory, long startMillis) {
         Timer.builder("production.processing.latency")
-                .tag("goods_type", type.name())
+                .tag("subcategory", subcategory.name())
                 .description("Time to process a production order")
                 .register(registry)
                 .record(System.currentTimeMillis() - startMillis, TimeUnit.MILLISECONDS);
