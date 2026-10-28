@@ -36,6 +36,20 @@ echo "DynamoDB ready"
 
 # S3 Buckets (idempotent)
 $AWS s3 mb s3://freehold-invoices 2>/dev/null || echo "freehold-invoices bucket already exists"
+$AWS s3 mb s3://freehold-spa 2>/dev/null || echo "freehold-spa bucket already exists"
+
+# SPA bucket: website hosting + public read
+$AWS s3 website s3://freehold-spa --index-document index.html --error-document index.html
+$AWS s3api put-bucket-policy --bucket freehold-spa --policy '{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "PublicRead",
+    "Effect": "Allow",
+    "Principal": "*",
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::freehold-spa/*"
+  }]
+}'
 echo "S3 ready"
 
 # SNS Topics (idempotent)
@@ -59,7 +73,7 @@ PROD_INT=$($AWS apigatewayv2 create-integration \
   --query 'IntegrationId' --output text)
 echo "Created Production integration: $PROD_INT"
 
-# Integration: Market service
+# Integration: Marketplace service
 MARKET_INT=$($AWS apigatewayv2 create-integration \
   --api-id $API_ID \
   --integration-type HTTP_PROXY \
@@ -78,9 +92,16 @@ echo "Created route /production/{proxy+}"
 
 $AWS apigatewayv2 create-route \
   --api-id $API_ID \
-  --route-key 'ANY /market/{proxy+}' \
+  --route-key 'ANY /marketplace/{proxy+}' \
   --target integrations/$MARKET_INT
-echo "Created route /market/{proxy+}"
+echo "Created route /marketplace/{proxy+}"
+
+# CloudFront distribution for SPA
+CF_ID=$($AWS cloudfront create-distribution \
+  --origin-domain-name freehold-spa.s3.amazonaws.com \
+  --default-root-object index.html \
+  --query 'Distribution.Id' --output text)
+echo "Created CloudFront distribution: $CF_ID"
 
 # Deploy
 $AWS apigatewayv2 create-stage \
