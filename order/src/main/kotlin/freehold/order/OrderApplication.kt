@@ -1,12 +1,11 @@
-package freehold.customer
+package freehold.order
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer
 
 @SpringBootApplication
-class CustomerApplication
+class OrderApplication
 
 fun main(args: Array<String>) {
-	runApplication<CustomerApplication>(*args)
+    runApplication<OrderApplication>(*args)
 }

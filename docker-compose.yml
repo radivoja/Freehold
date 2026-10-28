@@ -81,6 +81,19 @@ services:
       postgres:
         condition: service_healthy
 
+  order:
+    build:
+      context: ./order
+    ports:
+      - "8093:8093"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/freehold_order
+      SPRING_DATASOURCE_USERNAME: freehold
+      SPRING_DATASOURCE_PASSWORD: freehold
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   notification:
     build:
       context: ./notification
@@ -93,6 +106,17 @@ services:
     depends_on:
       ministack-init:
         condition: service_completed_successfully
+
+  spa:
+    build:
+      context: ./spa
+    ports:
+      - "3000:80"
+    depends_on:
+      - production
+      - marketplace
+      - order
+      - notification
 
   grafana:
     image: grafana/grafana:10.4.0

@@ -95,6 +95,16 @@ MARKET_INT=$($AWS apigatewayv2 create-integration \
   --query 'IntegrationId' --output text)
 echo "Created Market integration: $MARKET_INT"
 
+# Integration: Order service
+ORDER_INT=$($AWS apigatewayv2 create-integration \
+  --api-id $API_ID \
+  --integration-type HTTP_PROXY \
+  --integration-method ANY \
+  --integration-uri http://order:8093/{proxy} \
+  --payload-format-version 1.0 \
+  --query 'IntegrationId' --output text)
+echo "Created Order integration: $ORDER_INT"
+
 # Routes
 $AWS apigatewayv2 create-route \
   --api-id $API_ID \
@@ -107,6 +117,12 @@ $AWS apigatewayv2 create-route \
   --route-key 'ANY /marketplace/{proxy+}' \
   --target integrations/$MARKET_INT
 echo "Created route /marketplace/{proxy+}"
+
+$AWS apigatewayv2 create-route \
+  --api-id $API_ID \
+  --route-key 'ANY /order/{proxy+}' \
+  --target integrations/$ORDER_INT
+echo "Created route /order/{proxy+}"
 
 # CloudFront distribution for SPA
 CF_ID=$($AWS cloudfront create-distribution \
