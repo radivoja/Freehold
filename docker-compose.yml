@@ -15,6 +15,18 @@ services:
       retries: 10
       start_period: 10s
 
+  ministack-init:
+    image: ministackorg/ministack
+    depends_on:
+      ministack:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    entrypoint: ["bash", "/init/01-init-aws.sh"]
+    volumes:
+      - ./ministack/01-init-aws.sh:/init/01-init-aws.sh
+
   postgres:
     image: postgres:16
     ports:
@@ -44,8 +56,8 @@ services:
       SPRING_DATASOURCE_USERNAME: freehold
       SPRING_DATASOURCE_PASSWORD: freehold
     depends_on:
-      ministack:
-        condition: service_healthy
+      ministack-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
 
@@ -63,8 +75,8 @@ services:
       SPRING_DATASOURCE_USERNAME: freehold
       SPRING_DATASOURCE_PASSWORD: freehold
     depends_on:
-      ministack:
-        condition: service_healthy
+      ministack-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
 

@@ -5,15 +5,14 @@ import freehold.market.messaging.ProductionOrderPublisher;
 import freehold.market.messaging.event.ProductionOrderEvent;
 import freehold.market.metrics.OrderLatencyTracker;
 import freehold.market.model.GoodsType;
-import freehold.market.model.dto.ShipmentDto;
-import freehold.market.services.ShipmentService;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,19 +20,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/shipments")
 public class ShipmentController {
-    private final ShipmentService shipmentService;
     private final ProductionOrderPublisher productionOrderPublisher;
     private final MeterRegistry meterRegistry;
     private final OrderLatencyTracker orderLatencyTracker;
-
-    @GetMapping
-    public ResponseEntity<List<ShipmentDto>> findAllShipments(){
-        List<ShipmentDto> shipmentDtoList = shipmentService.getShipments();
-        if(shipmentDtoList.isEmpty())
-            return new ResponseEntity<>(shipmentService.getShipments(), HttpStatus.NO_CONTENT);
-
-        return new ResponseEntity<>(shipmentService.getShipments(), HttpStatus.OK);
-    }
 
     /**
      * Async supply — drops a message on the SQS queue and returns immediately.
