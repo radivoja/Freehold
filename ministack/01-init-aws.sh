@@ -42,4 +42,51 @@ echo "Created S3 bucket"
 $AWS sns create-topic --name order-notifications
 echo "Created SNS topic"
 
+# API Gateway v2 (HTTP API)
+API_ID=$($AWS apigatewayv2 create-api \
+  --name freehold-api \
+  --protocol-type HTTP \
+  --query 'ApiId' --output text)
+echo "Created API Gateway: $API_ID"
+
+# Integration: Production service
+PROD_INT=$($AWS apigatewayv2 create-integration \
+  --api-id $API_ID \
+  --integration-type HTTP_PROXY \
+  --integration-method ANY \
+  --integration-uri http://production:8090/{proxy} \
+  --payload-format-version 1.0 \
+  --query 'IntegrationId' --output text)
+echo "Created Production integration: $PROD_INT"
+
+# Integration: Market service
+MARKET_INT=$($AWS apigatewayv2 create-integration \
+  --api-id $API_ID \
+  --integration-type HTTP_PROXY \
+  --integration-method ANY \
+  --integration-uri http://market:8091/{proxy} \
+  --payload-format-version 1.0 \
+  --query 'IntegrationId' --output text)
+echo "Created Market integration: $MARKET_INT"
+
+# Routes
+$AWS apigatewayv2 create-route \
+  --api-id $API_ID \
+  --route-key 'ANY /production/{proxy+}' \
+  --target integrations/$PROD_INT
+echo "Created route /production/{proxy+}"
+
+$AWS apigatewayv2 create-route \
+  --api-id $API_ID \
+  --route-key 'ANY /market/{proxy+}' \
+  --target integrations/$MARKET_INT
+echo "Created route /market/{proxy+}"
+
+# Deploy
+$AWS apigatewayv2 create-stage \
+  --api-id $API_ID \
+  --stage-name prod \
+  --auto-deploy
+echo "Deployed API Gateway to prod stage"
+
 echo "=== MiniStack initialization complete ==="

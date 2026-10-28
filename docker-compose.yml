@@ -4,6 +4,7 @@ services:
     image: ministackorg/ministack
     ports:
       - "4566:4566"
+      - "4510:4510"
     environment:
       DEFAULT_REGION: us-east-1
     volumes:
