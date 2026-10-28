@@ -53,8 +53,20 @@ $AWS s3api put-bucket-policy --bucket freehold-spa --policy '{
 echo "S3 ready"
 
 # SNS Topics (idempotent)
-$AWS sns create-topic --name order-notifications
-echo "Created SNS topic"
+TOPIC_ARN=$($AWS sns create-topic --name order-notifications --query 'TopicArn' --output text)
+echo "Created SNS topic: $TOPIC_ARN"
+
+# Notification queue + subscribe to SNS
+$AWS sqs create-queue --queue-name notification-queue
+QUEUE_ARN=$($AWS sqs get-queue-attributes \
+  --queue-url http://localhost:4566/000000000000/notification-queue \
+  --attribute-names QueueArn \
+  --query 'Attributes.QueueArn' --output text)
+$AWS sns subscribe \
+  --topic-arn $TOPIC_ARN \
+  --protocol sqs \
+  --notification-endpoint $QUEUE_ARN
+echo "Subscribed notification-queue to SNS topic"
 
 # API Gateway v2 (HTTP API)
 API_ID=$($AWS apigatewayv2 create-api \

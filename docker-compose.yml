@@ -81,6 +81,19 @@ services:
       postgres:
         condition: service_healthy
 
+  notification:
+    build:
+      context: ./notification
+    ports:
+      - "8092:8092"
+    environment:
+      AWS_ENDPOINT: http://ministack:4566
+      AWS_REGION: us-east-1
+      SQS_NOTIFICATION_QUEUE: notification-queue
+    depends_on:
+      ministack-init:
+        condition: service_completed_successfully
+
   grafana:
     image: grafana/grafana:10.4.0
     container_name: grafana
