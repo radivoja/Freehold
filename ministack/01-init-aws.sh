@@ -27,18 +27,18 @@ $AWS sqs create-queue --queue-name production-orders
 $AWS sqs create-queue --queue-name production-results
 echo "Created SQS queues"
 
-# DynamoDB Tables
+# DynamoDB Tables (idempotent)
 $AWS dynamodb create-table --table-name audit-log \
   --attribute-definitions AttributeName=pk,AttributeType=S AttributeName=sk,AttributeType=S \
   --key-schema AttributeName=pk,KeyType=HASH AttributeName=sk,KeyType=RANGE \
-  --billing-mode PAY_PER_REQUEST
-echo "Created DynamoDB audit-log table"
+  --billing-mode PAY_PER_REQUEST 2>/dev/null || echo "audit-log table already exists"
+echo "DynamoDB ready"
 
-# S3 Buckets
-$AWS s3 mb s3://freehold-invoices
-echo "Created S3 bucket"
+# S3 Buckets (idempotent)
+$AWS s3 mb s3://freehold-invoices 2>/dev/null || echo "freehold-invoices bucket already exists"
+echo "S3 ready"
 
-# SNS Topics
+# SNS Topics (idempotent)
 $AWS sns create-topic --name order-notifications
 echo "Created SNS topic"
 

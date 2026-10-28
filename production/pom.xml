@@ -75,10 +75,11 @@
 			<artifactId>dynamodb</artifactId>
 		</dependency>
 
-		<!-- Flyway Database Migrations -->
+		<!-- Datafaker for seeding -->
 		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
+			<groupId>net.datafaker</groupId>
+			<artifactId>datafaker</artifactId>
+			<version>2.1.0</version>
 		</dependency>
 
 		<!-- AWS CloudWatch -->
