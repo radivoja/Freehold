@@ -1,4 +1,4 @@
-package freehold.production.goods;
+package freehold.production.goods.domain;
 
 import java.util.EnumMap;
 import java.util.EnumSet;

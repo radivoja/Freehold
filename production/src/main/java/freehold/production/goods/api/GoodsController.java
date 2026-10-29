@@ -1,5 +1,6 @@
-package freehold.production.goods;
+package freehold.production.goods.api;
 
+import freehold.production.goods.service.GoodsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +28,34 @@ public class GoodsController {
         return new ResponseEntity<>(goodsService.getAllGoods(), HttpStatus.OK);
     }
 
-    @PutMapping("/{id}/{amount}")
-    public ResponseEntity<String> setAmount(
+    @PostMapping
+    public ResponseEntity<GoodsDto> createGoods(
+            @RequestBody CreateGoodsRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID ownerId = UUID.fromString(jwt.getSubject());
+        GoodsDto created = goodsService.createGoods(request, ownerId);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<GoodsDto> updateGoods(
+            @PathVariable UUID id,
+            @RequestBody CreateGoodsRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        GoodsDto updated = goodsService.updateGoods(id, request, jwt.getSubject(), hasRole(jwt, "ADMIN"));
+        return new ResponseEntity<>(updated, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGoods(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal Jwt jwt) {
+        goodsService.deleteGoods(id, jwt.getSubject(), hasRole(jwt, "ADMIN"));
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PutMapping("/{id}/produce/{amount}")
+    public ResponseEntity<String> produce(
             @PathVariable UUID id,
             @PathVariable int amount,
             @AuthenticationPrincipal Jwt jwt) {
@@ -40,7 +67,7 @@ public class GoodsController {
         }
     }
 
-    @PutMapping("/supply/{id}/{amount}")
+    @PutMapping("/{id}/supply/{amount}")
     public ResponseEntity<Optional<GoodsDto>> supply(
             @PathVariable UUID id,
             @PathVariable int amount,

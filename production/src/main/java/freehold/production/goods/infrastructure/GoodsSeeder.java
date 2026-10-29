@@ -1,5 +1,7 @@
-package freehold.production.goods;
+package freehold.production.goods.infrastructure;
 
+import freehold.production.goods.domain.GoodsCategory;
+import freehold.production.goods.domain.GoodsSubcategory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.datafaker.Faker;
@@ -74,9 +76,6 @@ public class GoodsSeeder implements CommandLineRunner {
                     if ((i + 1) % BATCH_SIZE == 0) {
                         ps.executeBatch();
                         conn.commit();
-                        if ((i + 1) % 1_000_000 == 0) {
-                            log.info("Inserted {} / {} rows", i + 1, TOTAL_ROWS);
-                        }
                     }
                 }
                 ps.executeBatch();

@@ -1,4 +1,4 @@
-package freehold.production.goods;
+package freehold.production.goods.domain;
 
 public enum GoodsCategory {
     RAKIJA,

@@ -1,6 +1,6 @@
 package freehold.production.metrics;
 
-import freehold.production.goods.GoodsSubcategory;
+import freehold.production.goods.domain.GoodsSubcategory;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;

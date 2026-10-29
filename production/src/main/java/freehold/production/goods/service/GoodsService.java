@@ -1,5 +1,9 @@
-package freehold.production.goods;
+package freehold.production.goods.service;
 
+import freehold.production.goods.api.CreateGoodsRequest;
+import freehold.production.goods.api.GoodsDto;
+import freehold.production.goods.domain.Goods;
+import freehold.production.goods.domain.GoodsRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -29,6 +33,49 @@ public class GoodsService {
     public List<GoodsDto> getAllGoods() {
         Type listType = new TypeToken<List<GoodsDto>>() {}.getType();
         return modelMapper.map(goodsRepository.findAll(), listType);
+    }
+
+    public GoodsDto createGoods(CreateGoodsRequest request, UUID ownerId) {
+        Goods goods = Goods.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .category(request.getSubcategory().getCategory())
+                .subcategory(request.getSubcategory())
+                .ownerId(ownerId)
+                .price(request.getPrice())
+                .quantity(request.getQuantity())
+                .weight(request.getWeight())
+                .origin(request.getOrigin())
+                .harvestDate(request.getHarvestDate())
+                .build();
+        Goods saved = goodsRepository.save(goods);
+        return modelMapper.map(saved, GoodsDto.class);
+    }
+
+    public GoodsDto updateGoods(UUID id, CreateGoodsRequest request, String userSub, boolean isAdmin) {
+        Goods goods = goodsRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Goods not found"));
+        checkOwnership(goods, userSub, isAdmin);
+
+        goods.setName(request.getName());
+        goods.setDescription(request.getDescription());
+        goods.setCategory(request.getSubcategory().getCategory());
+        goods.setSubcategory(request.getSubcategory());
+        goods.setPrice(request.getPrice());
+        goods.setQuantity(request.getQuantity());
+        goods.setWeight(request.getWeight());
+        goods.setOrigin(request.getOrigin());
+        goods.setHarvestDate(request.getHarvestDate());
+
+        Goods saved = goodsRepository.save(goods);
+        return modelMapper.map(saved, GoodsDto.class);
+    }
+
+    public void deleteGoods(UUID id, String userSub, boolean isAdmin) {
+        Goods goods = goodsRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Goods not found"));
+        checkOwnership(goods, userSub, isAdmin);
+        goodsRepository.delete(goods);
     }
 
     public void produce(UUID id, int amount, String userSub, boolean isAdmin) {

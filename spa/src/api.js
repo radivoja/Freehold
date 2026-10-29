@@ -9,12 +9,16 @@ async function request(path, options = {}) {
 
   const res = await fetch(`${BASE}${path}`, { headers, ...options })
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  if (res.status === 204) return null
   return res.json()
 }
 
 export const goodsApi = {
   getAll: () => request('/production/goods'),
   getById: (id) => request(`/production/goods/${id}`),
+  create: (goods) => request('/production/goods', { method: 'POST', body: JSON.stringify(goods) }),
+  update: (id, goods) => request(`/production/goods/${id}`, { method: 'PUT', body: JSON.stringify(goods) }),
+  delete: (id) => request(`/production/goods/${id}`, { method: 'DELETE' }),
 }
 
 export const marketplaceApi = {
