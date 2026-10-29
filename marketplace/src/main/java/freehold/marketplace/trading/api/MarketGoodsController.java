@@ -1,8 +1,7 @@
-package freehold.marketplace.controller;
+package freehold.marketplace.trading.api;
 
-import freehold.marketplace.model.GoodsSubcategory;
-import freehold.marketplace.model.dto.MarketGoodsDto;
-import freehold.marketplace.services.MarketGoodsService;
+import freehold.marketplace.trading.domain.GoodsSubcategory;
+import freehold.marketplace.trading.service.MarketGoodsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

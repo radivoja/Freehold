@@ -1,6 +1,6 @@
-package freehold.marketplace.model.dto;
+package freehold.marketplace.shipment.api;
 
-import freehold.marketplace.model.MarketGoods;
+import freehold.marketplace.trading.domain.MarketGoods;
 import lombok.Data;
 
 import java.sql.Timestamp;

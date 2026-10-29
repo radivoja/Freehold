@@ -1,7 +1,5 @@
-package freehold.marketplace.repository;
+package freehold.marketplace.trading.domain;
 
-import freehold.marketplace.model.GoodsSubcategory;
-import freehold.marketplace.model.MarketGoods;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

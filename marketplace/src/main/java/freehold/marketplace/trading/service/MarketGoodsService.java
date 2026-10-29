@@ -1,8 +1,8 @@
-package freehold.marketplace.services;
+package freehold.marketplace.trading.service;
 
-import freehold.marketplace.model.GoodsSubcategory;
-import freehold.marketplace.model.MarketGoods;
-import freehold.marketplace.model.dto.MarketGoodsDto;
+import freehold.marketplace.trading.domain.GoodsSubcategory;
+import freehold.marketplace.trading.domain.MarketGoods;
+import freehold.marketplace.trading.api.MarketGoodsDto;
 
 import java.util.List;
 import java.util.Optional;

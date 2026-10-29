@@ -1,10 +1,10 @@
-package freehold.marketplace.controller;
+package freehold.marketplace.shipment.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import freehold.marketplace.messaging.ProductionOrderPublisher;
 import freehold.marketplace.messaging.event.ProductionOrderEvent;
 import freehold.marketplace.metrics.OrderLatencyTracker;
-import freehold.marketplace.model.GoodsSubcategory;
+import freehold.marketplace.trading.domain.GoodsSubcategory;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,10 +24,6 @@ public class ShipmentController {
     private final MeterRegistry meterRegistry;
     private final OrderLatencyTracker orderLatencyTracker;
 
-    /**
-     * Async supply — drops a message on the SQS queue and returns immediately.
-     * Production picks it up, processes it, and sends the result back via another queue.
-     */
     @PutMapping("/async/{type}/{amount}")
     public ResponseEntity<Map<String, String>> supplyAsync(
             @PathVariable GoodsSubcategory type,

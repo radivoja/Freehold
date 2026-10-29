@@ -1,5 +1,6 @@
-package freehold.marketplace.model;
+package freehold.marketplace.shipment.domain;
 
+import freehold.marketplace.trading.domain.MarketGoods;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;

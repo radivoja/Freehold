@@ -1,10 +1,10 @@
-package freehold.marketplace.services;
+package freehold.marketplace.trading.service;
 
 import freehold.marketplace.metrics.MetricsService;
-import freehold.marketplace.model.GoodsSubcategory;
-import freehold.marketplace.model.MarketGoods;
-import freehold.marketplace.model.dto.MarketGoodsDto;
-import freehold.marketplace.repository.MarketGoodsRepository;
+import freehold.marketplace.trading.domain.GoodsSubcategory;
+import freehold.marketplace.trading.domain.MarketGoods;
+import freehold.marketplace.trading.domain.MarketGoodsRepository;
+import freehold.marketplace.trading.api.MarketGoodsDto;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;

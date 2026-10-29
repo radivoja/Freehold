@@ -7,7 +7,7 @@ import freehold.marketplace.invoice.InvoiceService;
 import freehold.marketplace.messaging.event.ProductionResultEvent;
 import freehold.marketplace.metrics.OrderLatencyTracker;
 import freehold.marketplace.notification.NotificationService;
-import freehold.marketplace.services.MarketGoodsService;
+import freehold.marketplace.trading.service.MarketGoodsService;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

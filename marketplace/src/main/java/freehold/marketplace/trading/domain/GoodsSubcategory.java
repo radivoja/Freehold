@@ -1,4 +1,4 @@
-package freehold.marketplace.model;
+package freehold.marketplace.trading.domain;
 
 import java.util.EnumMap;
 import java.util.EnumSet;

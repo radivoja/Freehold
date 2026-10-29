@@ -1,6 +1,6 @@
 package freehold.marketplace.metrics;
 
-import freehold.marketplace.model.GoodsSubcategory;
+import freehold.marketplace.trading.domain.GoodsSubcategory;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;

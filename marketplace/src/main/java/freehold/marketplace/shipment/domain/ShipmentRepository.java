@@ -1,6 +1,5 @@
-package freehold.marketplace.repository;
+package freehold.marketplace.shipment.domain;
 
-import freehold.marketplace.model.Shipment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
