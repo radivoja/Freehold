@@ -7,9 +7,11 @@ Serbian artisan food & spirits marketplace built with microservices architecture
 ```
                         Browser
                            |
+                    Cognito (login)
+                           |
                       SPA (React)
                            |
-                     API Gateway
+                  API Gateway (JWT Authorizer)
                            |
        +------------+------+------+-------------+
        |            |             |              |
@@ -21,13 +23,13 @@ Serbian artisan food & spirits marketplace built with microservices architecture
                       PostgreSQL
 ```
 
-In production the SPA is a static bundle on S3 served by CloudFront. API Gateway routes requests to the backend services. Locally, nginx proxies API calls from the SPA to backend containers.
+In production the SPA is a static bundle on S3 served by CloudFront. API Gateway validates JWT tokens at the edge and routes requests to the backend services. Locally, nginx proxies API calls from the SPA to backend containers.
 
 ## Services
 
 | Service | Language | Port | Description |
 |---------|----------|------|-------------|
-| Production | Java / Spring Boot | 8090 | Goods inventory with 10M row Datafaker seeder |
+| Production | Java / Spring Boot | 8090 | Goods inventory with Datafaker seeder |
 | Marketplace | Java / Spring Boot | 8091 | Market prices, stock levels, SQS-driven supply |
 | Order | Kotlin / Spring Boot | 8093 | Order placement and lifecycle management |
 | Notification | Python / FastAPI | 8092 | Event-driven alerts via SQS consumer |
@@ -42,7 +44,8 @@ In production the SPA is a static bundle on S3 served by CloudFront. API Gateway
 **Database:** PostgreSQL 16 (ddl-auto=update)
 
 **AWS (emulated via MiniStack):**
-- API Gateway v2 (HTTP proxy routing)
+- Cognito (user authentication, JWT tokens)
+- API Gateway v2 (HTTP proxy routing, JWT authorizer)
 - SQS (event queues between services)
 - SNS (notification topics)
 - S3 + CloudFront (SPA static hosting)
@@ -74,6 +77,7 @@ docker compose up --build
 | http://localhost:8093 | Order API |
 | http://localhost:4566 | MiniStack (AWS emulator) |
 | http://localhost:3001 | Grafana (admin/admin) |
+| http://localhost:5050 | pgAdmin (admin@freehold.com/admin) |
 
 ## SPA Development
 
@@ -86,6 +90,25 @@ npm run dev
 ```
 
 Vite proxies API calls to backend services on their local ports.
+
+## Authentication
+
+Dual-layer JWT authentication using AWS Cognito:
+
+1. **API Gateway JWT Authorizer** — validates token at the edge (signature, expiry, audience). Protects production routes. Rejects bad requests with 401 before they hit services.
+2. **Spring Boot OAuth2 Resource Server** — defense in depth. Each backend validates the JWT again and extracts user claims.
+
+**Test credentials:** `test@freehold.com` / `Test1234!`
+
+Login is required — unauthenticated users see only the login page. The SPA uses `amazon-cognito-identity-js` for authentication and attaches the JWT as a Bearer token on every API call.
+
+| Route | Auth |
+|-------|------|
+| GET /goods | Public (browse without login) |
+| PUT /goods/** | Authenticated (JWT required) |
+| /marketplace/** | Public |
+| /order/** | Public |
+| /notification/** | Public |
 
 ## API Endpoints
 

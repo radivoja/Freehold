@@ -1,10 +1,13 @@
+import { getIdToken } from './auth/authService'
+
 const BASE = '/api'
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
+  const token = await getIdToken()
+  const headers = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(`${BASE}${path}`, { headers, ...options })
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return res.json()
 }

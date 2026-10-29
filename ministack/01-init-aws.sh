@@ -15,12 +15,38 @@ POOL_ID=$($AWS cognito-idp create-user-pool \
 echo "Created User Pool: $POOL_ID"
 
 # Cognito App Client (SPA - no secret)
-$AWS cognito-idp create-user-pool-client \
+CLIENT_ID=$($AWS cognito-idp create-user-pool-client \
   --user-pool-id $POOL_ID \
   --client-name freehold-spa \
   --no-generate-secret \
-  --explicit-auth-flows ALLOW_USER_SRP_AUTH ALLOW_REFRESH_TOKEN_AUTH ALLOW_USER_PASSWORD_AUTH
-echo "Created App Client for pool $POOL_ID"
+  --explicit-auth-flows ALLOW_USER_SRP_AUTH ALLOW_REFRESH_TOKEN_AUTH ALLOW_USER_PASSWORD_AUTH \
+  --query 'UserPoolClient.ClientId' --output text)
+echo "Created App Client: $CLIENT_ID"
+
+# Persist Cognito config for other services
+cat > /init/cognito-config.env <<EOF
+COGNITO_USER_POOL_ID=$POOL_ID
+COGNITO_CLIENT_ID=$CLIENT_ID
+COGNITO_ENDPOINT=http://ministack:4566
+COGNITO_ISSUER_URI=https://cognito-idp.us-east-1.amazonaws.com/$POOL_ID
+COGNITO_JWK_SET_URI=http://ministack:4566/$POOL_ID/.well-known/jwks.json
+EOF
+echo "Wrote cognito-config.env"
+
+# Create test user
+$AWS cognito-idp admin-create-user \
+  --user-pool-id $POOL_ID \
+  --username test@freehold.com \
+  --temporary-password 'Test1234!' \
+  --user-attributes Name=email,Value=test@freehold.com Name=email_verified,Value=true \
+  --message-action SUPPRESS
+
+$AWS cognito-idp admin-set-user-password \
+  --user-pool-id $POOL_ID \
+  --username test@freehold.com \
+  --password 'Test1234!' \
+  --permanent
+echo "Created test user: test@freehold.com / Test1234!"
 
 # SQS Queues
 $AWS sqs create-queue --queue-name production-orders
@@ -105,12 +131,24 @@ ORDER_INT=$($AWS apigatewayv2 create-integration \
   --query 'IntegrationId' --output text)
 echo "Created Order integration: $ORDER_INT"
 
+# JWT Authorizer (Cognito)
+AUTHORIZER_ID=$($AWS apigatewayv2 create-authorizer \
+  --api-id $API_ID \
+  --authorizer-type JWT \
+  --identity-source '$request.header.Authorization' \
+  --name cognito-auth \
+  --jwt-configuration "Issuer=http://ministack:4566/$POOL_ID,Audience=$CLIENT_ID" \
+  --query 'AuthorizerId' --output text)
+echo "Created JWT Authorizer: $AUTHORIZER_ID"
+
 # Routes
 $AWS apigatewayv2 create-route \
   --api-id $API_ID \
   --route-key 'ANY /production/{proxy+}' \
-  --target integrations/$PROD_INT
-echo "Created route /production/{proxy+}"
+  --target integrations/$PROD_INT \
+  --authorization-type JWT \
+  --authorizer-id $AUTHORIZER_ID
+echo "Created route /production/{proxy+} (protected by JWT authorizer)"
 
 $AWS apigatewayv2 create-route \
   --api-id $API_ID \

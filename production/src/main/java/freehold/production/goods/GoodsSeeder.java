@@ -21,8 +21,8 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class GoodsSeeder implements CommandLineRunner {
 
-    private static final int TOTAL_ROWS = 10_000_000;
-    private static final int BATCH_SIZE = 10_000;
+    private static final int TOTAL_ROWS = 1_000;
+    private static final int BATCH_SIZE = 500;
 
     private static final GoodsSubcategory[] SUBCATEGORIES = GoodsSubcategory.values();
     private static final String[] SERBIAN_ORIGINS = {

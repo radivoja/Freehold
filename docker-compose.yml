@@ -26,7 +26,7 @@ services:
       AWS_SECRET_ACCESS_KEY: test
     entrypoint: ["bash", "/init/01-init-aws.sh"]
     volumes:
-      - ./ministack/01-init-aws.sh:/init/01-init-aws.sh
+      - ./ministack:/init
 
   postgres:
     image: postgres:16
@@ -50,6 +50,8 @@ services:
         SERVICE: production
     ports:
       - "8090:8090"
+    volumes:
+      - ./ministack:/cognito:ro
     environment:
       AWS_ENDPOINT: http://ministack:4566
       AWS_REGION: us-east-1
@@ -69,6 +71,8 @@ services:
         SERVICE: marketplace
     ports:
       - "8091:8091"
+    volumes:
+      - ./ministack:/cognito:ro
     environment:
       AWS_ENDPOINT: http://ministack:4566
       AWS_REGION: us-east-1
@@ -86,11 +90,15 @@ services:
       context: ./order
     ports:
       - "8093:8093"
+    volumes:
+      - ./ministack:/cognito:ro
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/freehold_order
       SPRING_DATASOURCE_USERNAME: freehold
       SPRING_DATASOURCE_PASSWORD: freehold
     depends_on:
+      ministack-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
 
@@ -112,11 +120,26 @@ services:
       context: ./spa
     ports:
       - "3000:80"
+    volumes:
+      - ./ministack:/cognito:ro
     depends_on:
       - production
       - marketplace
       - order
       - notification
+
+  pgadmin:
+    image: dpage/pgadmin4:8.13
+    container_name: pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@freehold.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   grafana:
     image: grafana/grafana:10.4.0

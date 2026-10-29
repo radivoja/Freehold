@@ -22,5 +22,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 COPY --from=build /app.jar ./app.jar
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
