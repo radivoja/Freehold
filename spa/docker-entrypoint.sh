@@ -10,4 +10,8 @@ cat > /usr/share/nginx/html/config.json <<EOF
   "endpoint": "${BROWSER_ENDPOINT}"
 }
 EOF
+
+export API_GATEWAY_URL="http://ministack:4566/restapis/${API_GATEWAY_ID}/prod/_user_request_"
+envsubst '${API_GATEWAY_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+
 exec nginx -g 'daemon off;'

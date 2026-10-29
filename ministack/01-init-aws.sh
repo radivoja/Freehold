@@ -103,7 +103,8 @@ $AWS dynamodb put-item --table-name rbac-permissions --item '{
     {"S": "PUT /production/*"},
     {"S": "POST /production/*"},
     {"S": "DELETE /production/*"},
-    {"S": "GET /marketplace/*"}
+    {"S": "GET /marketplace/*"},
+    {"S": "GET /notification/*"}
   ]}
 }'
 $AWS dynamodb put-item --table-name rbac-permissions --item '{
@@ -111,6 +112,7 @@ $AWS dynamodb put-item --table-name rbac-permissions --item '{
   "routes": {"L": [
     {"S": "GET /production/*"},
     {"S": "GET /marketplace/*"},
+    {"S": "GET /notification/*"},
     {"S": "POST /order/*"},
     {"S": "GET /order/*"}
   ]}
@@ -163,13 +165,14 @@ API_ID=$($AWS apigatewayv2 create-api \
   --protocol-type HTTP \
   --query 'ApiId' --output text)
 echo "Created API Gateway: $API_ID"
+echo "API_GATEWAY_ID=$API_ID" >> /init/cognito-config.env
 
 # Integration: Production service
 PROD_INT=$($AWS apigatewayv2 create-integration \
   --api-id $API_ID \
   --integration-type HTTP_PROXY \
   --integration-method ANY \
-  --integration-uri http://production:8090/{proxy} \
+  --integration-uri http://production:8090 \
   --payload-format-version 1.0 \
   --query 'IntegrationId' --output text)
 echo "Created Production integration: $PROD_INT"
@@ -179,7 +182,7 @@ MARKET_INT=$($AWS apigatewayv2 create-integration \
   --api-id $API_ID \
   --integration-type HTTP_PROXY \
   --integration-method ANY \
-  --integration-uri http://marketplace:8091/{proxy} \
+  --integration-uri http://marketplace:8091 \
   --payload-format-version 1.0 \
   --query 'IntegrationId' --output text)
 echo "Created Market integration: $MARKET_INT"
@@ -189,10 +192,20 @@ ORDER_INT=$($AWS apigatewayv2 create-integration \
   --api-id $API_ID \
   --integration-type HTTP_PROXY \
   --integration-method ANY \
-  --integration-uri http://order:8093/{proxy} \
+  --integration-uri http://order:8093 \
   --payload-format-version 1.0 \
   --query 'IntegrationId' --output text)
 echo "Created Order integration: $ORDER_INT"
+
+# Integration: Notification service
+NOTIF_INT=$($AWS apigatewayv2 create-integration \
+  --api-id $API_ID \
+  --integration-type HTTP_PROXY \
+  --integration-method ANY \
+  --integration-uri http://notification:8092 \
+  --payload-format-version 1.0 \
+  --query 'IntegrationId' --output text)
+echo "Created Notification integration: $NOTIF_INT"
 
 # Lambda Authorizer function
 python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/authorizer.zip','w'); z.write('/lambda/authorizer/index.py','index.py'); z.close()"
@@ -213,7 +226,7 @@ AUTHORIZER_ID=$($AWS apigatewayv2 create-authorizer \
   --authorizer-uri "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/$LAMBDA_ARN/invocations" \
   --authorizer-payload-format-version 2.0 \
   --enable-simple-responses \
-  --identity-source '$request.header.Authorization' \
+  --identity-source '$context.accountId' \
   --name rbac-authorizer \
   --query 'AuthorizerId' --output text)
 echo "Created Lambda Authorizer: $AUTHORIZER_ID"
@@ -242,6 +255,14 @@ $AWS apigatewayv2 create-route \
   --authorization-type CUSTOM \
   --authorizer-id $AUTHORIZER_ID
 echo "Created route /order/{proxy+} (Lambda authorizer)"
+
+$AWS apigatewayv2 create-route \
+  --api-id $API_ID \
+  --route-key 'ANY /notification/{proxy+}' \
+  --target integrations/$NOTIF_INT \
+  --authorization-type CUSTOM \
+  --authorizer-id $AUTHORIZER_ID
+echo "Created route /notification/{proxy+} (Lambda authorizer)"
 
 # CloudFront distribution for SPA
 CF_ID=$($AWS cloudfront create-distribution \

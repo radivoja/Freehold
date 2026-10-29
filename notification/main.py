@@ -93,16 +93,16 @@ def start_poller():
     log.info("Notification poller started")
 
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/notification/health", response_model=HealthResponse)
 def health():
     return HealthResponse(status="UP", service="notification")
 
 
-@app.get("/notifications")
+@app.get("/notification/notifications")
 def get_notifications():
     return notifications
 
 
-@app.get("/notifications/count")
+@app.get("/notification/notifications/count")
 def get_count():
     return {"count": len(notifications)}
