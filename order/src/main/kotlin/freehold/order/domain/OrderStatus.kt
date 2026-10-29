@@ -1,4 +1,4 @@
-package freehold.order.model
+package freehold.order.domain
 
 enum class OrderStatus {
     PLACED,

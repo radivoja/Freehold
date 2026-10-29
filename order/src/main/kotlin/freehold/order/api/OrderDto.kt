@@ -1,5 +1,7 @@
-package freehold.order.model
+package freehold.order.api
 
+import freehold.order.domain.Order
+import freehold.order.domain.OrderStatus
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.UUID

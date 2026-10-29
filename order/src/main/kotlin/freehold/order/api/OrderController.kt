@@ -1,8 +1,6 @@
-package freehold.order.controller
+package freehold.order.api
 
-import freehold.order.model.CreateOrderRequest
-import freehold.order.model.OrderResponse
-import freehold.order.model.OrderStatus
+import freehold.order.domain.OrderStatus
 import freehold.order.service.OrderService
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*

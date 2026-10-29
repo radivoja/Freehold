@@ -1,4 +1,4 @@
-package freehold.order.model
+package freehold.order.domain
 
 import jakarta.persistence.*
 import java.math.BigDecimal

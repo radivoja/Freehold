@@ -1,7 +1,11 @@
 package freehold.order.service
 
-import freehold.order.model.*
-import freehold.order.repository.OrderRepository
+import freehold.order.api.CreateOrderRequest
+import freehold.order.api.OrderResponse
+import freehold.order.api.toResponse
+import freehold.order.domain.Order
+import freehold.order.domain.OrderRepository
+import freehold.order.domain.OrderStatus
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.util.UUID

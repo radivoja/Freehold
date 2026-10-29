@@ -1,7 +1,5 @@
-package freehold.order.repository
+package freehold.order.domain
 
-import freehold.order.model.Order
-import freehold.order.model.OrderStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import java.util.UUID
 
