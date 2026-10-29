@@ -27,6 +27,7 @@ services:
     entrypoint: ["bash", "/init/01-init-aws.sh"]
     volumes:
       - ./ministack:/init
+      - ./lambda:/lambda:ro
 
   postgres:
     image: postgres:16

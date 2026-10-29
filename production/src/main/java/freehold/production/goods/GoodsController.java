@@ -3,6 +3,8 @@ package freehold.production.goods;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,9 +28,12 @@ public class GoodsController {
     }
 
     @PutMapping("/{id}/{amount}")
-    public ResponseEntity<String> setAmount(@PathVariable UUID id, @PathVariable int amount) {
+    public ResponseEntity<String> setAmount(
+            @PathVariable UUID id,
+            @PathVariable int amount,
+            @AuthenticationPrincipal Jwt jwt) {
         if (amount > 0) {
-            goodsService.produce(id, amount);
+            goodsService.produce(id, amount, jwt.getSubject(), hasRole(jwt, "ADMIN"));
             return new ResponseEntity<>("Quantity has been changed by: " + amount, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Nothing changed", HttpStatus.OK);
@@ -36,12 +41,20 @@ public class GoodsController {
     }
 
     @PutMapping("/supply/{id}/{amount}")
-    public ResponseEntity<Optional<GoodsDto>> supply(@PathVariable UUID id, @PathVariable int amount) {
-        Optional<GoodsDto> goodsDto = goodsService.supply(id, amount);
+    public ResponseEntity<Optional<GoodsDto>> supply(
+            @PathVariable UUID id,
+            @PathVariable int amount,
+            @AuthenticationPrincipal Jwt jwt) {
+        Optional<GoodsDto> goodsDto = goodsService.supply(id, amount, jwt.getSubject(), hasRole(jwt, "ADMIN"));
         if (goodsDto.isPresent()) {
             return new ResponseEntity<>(goodsDto, HttpStatus.OK);
         } else {
             return new ResponseEntity<>(goodsDto, HttpStatus.NO_CONTENT);
         }
+    }
+
+    private boolean hasRole(Jwt jwt, String role) {
+        var groups = jwt.getClaimAsStringList("cognito:groups");
+        return groups != null && groups.contains(role);
     }
 }

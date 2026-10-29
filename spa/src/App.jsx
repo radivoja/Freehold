@@ -6,6 +6,7 @@ import Marketplace from './pages/Marketplace'
 import Orders from './pages/Orders'
 import Notifications from './pages/Notifications'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import { useAuth } from './auth/AuthContext'
 
 function ProtectedRoute({ children }) {
@@ -24,6 +25,7 @@ export default function App() {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     )

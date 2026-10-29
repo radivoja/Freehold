@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 
 export default function Navbar() {
   const [count, setCount] = useState(0)
-  const { user, logout } = useAuth()
+  const { user, role, logout } = useAuth()
 
   useEffect(() => {
     const poll = () => notificationApi.getCount().then(d => setCount(d.count)).catch(() => {})
@@ -20,14 +20,19 @@ export default function Navbar() {
       <div className="nav-links">
         <NavLink to="/goods">Goods</NavLink>
         <NavLink to="/marketplace">Marketplace</NavLink>
-        <NavLink to="/orders">Orders</NavLink>
-        <NavLink to="/notifications" className="notif-link">
-          Notifications
-          {count > 0 && <span className="badge">{count}</span>}
-        </NavLink>
+        {(role === 'CUSTOMER' || role === 'ADMIN') && (
+          <NavLink to="/orders">Orders</NavLink>
+        )}
+        {role === 'ADMIN' && (
+          <NavLink to="/notifications" className="notif-link">
+            Notifications
+            {count > 0 && <span className="badge">{count}</span>}
+          </NavLink>
+        )}
       </div>
       {user && (
         <div className="nav-user">
+          {role && <span className="role-badge">{role}</span>}
           <span className="user-email">{user.email}</span>
           <button className="sign-out-btn" onClick={logout}>Sign Out</button>
         </div>

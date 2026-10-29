@@ -10,7 +10,7 @@ AWS="aws --endpoint-url=http://ministack:4566 --region us-east-1"
 POOL_ID=$($AWS cognito-idp create-user-pool \
   --pool-name freehold-users \
   --auto-verified-attributes email \
-  --schema '[{"Name":"email","Required":true,"Mutable":true}]' \
+  --schema '[{"Name":"email","Required":true,"Mutable":true},{"Name":"custom:role","AttributeDataType":"String","Mutable":true}]' \
   --query 'UserPool.Id' --output text)
 echo "Created User Pool: $POOL_ID"
 
@@ -33,20 +33,51 @@ COGNITO_JWK_SET_URI=http://ministack:4566/$POOL_ID/.well-known/jwks.json
 EOF
 echo "Wrote cognito-config.env"
 
-# Create test user
-$AWS cognito-idp admin-create-user \
-  --user-pool-id $POOL_ID \
-  --username test@freehold.com \
-  --temporary-password 'Test1234!' \
-  --user-attributes Name=email,Value=test@freehold.com Name=email_verified,Value=true \
-  --message-action SUPPRESS
+# Cognito Groups (RBAC roles)
+$AWS cognito-idp create-group --user-pool-id $POOL_ID --group-name LANDOWNER
+$AWS cognito-idp create-group --user-pool-id $POOL_ID --group-name CUSTOMER
+$AWS cognito-idp create-group --user-pool-id $POOL_ID --group-name ADMIN
+echo "Created Cognito Groups: LANDOWNER, CUSTOMER, ADMIN"
 
-$AWS cognito-idp admin-set-user-password \
+# Post-confirmation Lambda trigger (assigns group based on custom:role)
+python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/post-confirmation.zip','w'); z.write('/lambda/post-confirmation/index.py','index.py'); z.close()"
+POST_CONFIRM_ARN=$($AWS lambda create-function \
+  --function-name freehold-post-confirmation \
+  --runtime python3.11 \
+  --handler index.handler \
+  --zip-file fileb:///tmp/post-confirmation.zip \
+  --role arn:aws:iam::000000000000:role/lambda-role \
+  --environment "Variables={AWS_ENDPOINT=http://ministack:4566,AWS_REGION=us-east-1}" \
+  --query 'FunctionArn' --output text)
+echo "Deployed post-confirmation Lambda: $POST_CONFIRM_ARN"
+
+# Attach Lambda trigger to Cognito User Pool
+$AWS cognito-idp update-user-pool \
   --user-pool-id $POOL_ID \
-  --username test@freehold.com \
-  --password 'Test1234!' \
-  --permanent
-echo "Created test user: test@freehold.com / Test1234!"
+  --lambda-config "PostConfirmation=$POST_CONFIRM_ARN"
+echo "Attached post-confirmation trigger to User Pool"
+
+# Test users (one per role)
+for USER_EMAIL in landowner@freehold.com customer@freehold.com admin@freehold.com; do
+  $AWS cognito-idp admin-create-user \
+    --user-pool-id $POOL_ID \
+    --username "$USER_EMAIL" \
+    --temporary-password 'Test1234!' \
+    --user-attributes Name=email,Value="$USER_EMAIL" Name=email_verified,Value=true \
+    --message-action SUPPRESS
+
+  $AWS cognito-idp admin-set-user-password \
+    --user-pool-id $POOL_ID \
+    --username "$USER_EMAIL" \
+    --password 'Test1234!' \
+    --permanent
+done
+
+# Assign users to groups
+$AWS cognito-idp admin-add-user-to-group --user-pool-id $POOL_ID --username landowner@freehold.com --group-name LANDOWNER
+$AWS cognito-idp admin-add-user-to-group --user-pool-id $POOL_ID --username customer@freehold.com --group-name CUSTOMER
+$AWS cognito-idp admin-add-user-to-group --user-pool-id $POOL_ID --username admin@freehold.com --group-name ADMIN
+echo "Created test users: landowner/customer/admin @freehold.com (Test1234!)"
 
 # SQS Queues
 $AWS sqs create-queue --queue-name production-orders
@@ -58,7 +89,39 @@ $AWS dynamodb create-table --table-name audit-log \
   --attribute-definitions AttributeName=pk,AttributeType=S AttributeName=sk,AttributeType=S \
   --key-schema AttributeName=pk,KeyType=HASH AttributeName=sk,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST 2>/dev/null || echo "audit-log table already exists"
-echo "DynamoDB ready"
+
+$AWS dynamodb create-table --table-name rbac-permissions \
+  --attribute-definitions AttributeName=group_name,AttributeType=S \
+  --key-schema AttributeName=group_name,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST 2>/dev/null || echo "rbac-permissions table already exists"
+
+# Seed RBAC permission rows
+$AWS dynamodb put-item --table-name rbac-permissions --item '{
+  "group_name": {"S": "LANDOWNER"},
+  "routes": {"L": [
+    {"S": "GET /production/*"},
+    {"S": "PUT /production/*"},
+    {"S": "POST /production/*"},
+    {"S": "DELETE /production/*"},
+    {"S": "GET /marketplace/*"}
+  ]}
+}'
+$AWS dynamodb put-item --table-name rbac-permissions --item '{
+  "group_name": {"S": "CUSTOMER"},
+  "routes": {"L": [
+    {"S": "GET /production/*"},
+    {"S": "GET /marketplace/*"},
+    {"S": "POST /order/*"},
+    {"S": "GET /order/*"}
+  ]}
+}'
+$AWS dynamodb put-item --table-name rbac-permissions --item '{
+  "group_name": {"S": "ADMIN"},
+  "routes": {"L": [
+    {"S": "*"}
+  ]}
+}'
+echo "DynamoDB ready (audit-log + rbac-permissions seeded)"
 
 # S3 Buckets (idempotent)
 $AWS s3 mb s3://freehold-invoices 2>/dev/null || echo "freehold-invoices bucket already exists"
@@ -131,36 +194,54 @@ ORDER_INT=$($AWS apigatewayv2 create-integration \
   --query 'IntegrationId' --output text)
 echo "Created Order integration: $ORDER_INT"
 
-# JWT Authorizer (Cognito)
+# Lambda Authorizer function
+python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/authorizer.zip','w'); z.write('/lambda/authorizer/index.py','index.py'); z.close()"
+LAMBDA_ARN=$($AWS lambda create-function \
+  --function-name freehold-authorizer \
+  --runtime python3.11 \
+  --handler index.handler \
+  --zip-file fileb:///tmp/authorizer.zip \
+  --role arn:aws:iam::000000000000:role/lambda-role \
+  --environment "Variables={AWS_ENDPOINT=http://ministack:4566,AWS_REGION=us-east-1,DYNAMODB_TABLE=rbac-permissions}" \
+  --query 'FunctionArn' --output text)
+echo "Deployed Lambda Authorizer: $LAMBDA_ARN"
+
+# Lambda Authorizer on API Gateway (replaces JWT Authorizer)
 AUTHORIZER_ID=$($AWS apigatewayv2 create-authorizer \
   --api-id $API_ID \
-  --authorizer-type JWT \
+  --authorizer-type REQUEST \
+  --authorizer-uri "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/$LAMBDA_ARN/invocations" \
+  --authorizer-payload-format-version 2.0 \
+  --enable-simple-responses \
   --identity-source '$request.header.Authorization' \
-  --name cognito-auth \
-  --jwt-configuration "Issuer=http://ministack:4566/$POOL_ID,Audience=$CLIENT_ID" \
+  --name rbac-authorizer \
   --query 'AuthorizerId' --output text)
-echo "Created JWT Authorizer: $AUTHORIZER_ID"
+echo "Created Lambda Authorizer: $AUTHORIZER_ID"
 
-# Routes
+# Routes (all protected by Lambda Authorizer)
 $AWS apigatewayv2 create-route \
   --api-id $API_ID \
   --route-key 'ANY /production/{proxy+}' \
   --target integrations/$PROD_INT \
-  --authorization-type JWT \
+  --authorization-type CUSTOM \
   --authorizer-id $AUTHORIZER_ID
-echo "Created route /production/{proxy+} (protected by JWT authorizer)"
+echo "Created route /production/{proxy+} (Lambda authorizer)"
 
 $AWS apigatewayv2 create-route \
   --api-id $API_ID \
   --route-key 'ANY /marketplace/{proxy+}' \
-  --target integrations/$MARKET_INT
-echo "Created route /marketplace/{proxy+}"
+  --target integrations/$MARKET_INT \
+  --authorization-type CUSTOM \
+  --authorizer-id $AUTHORIZER_ID
+echo "Created route /marketplace/{proxy+} (Lambda authorizer)"
 
 $AWS apigatewayv2 create-route \
   --api-id $API_ID \
   --route-key 'ANY /order/{proxy+}' \
-  --target integrations/$ORDER_INT
-echo "Created route /order/{proxy+}"
+  --target integrations/$ORDER_INT \
+  --authorization-type CUSTOM \
+  --authorizer-id $AUTHORIZER_ID
+echo "Created route /order/{proxy+} (Lambda authorizer)"
 
 # CloudFront distribution for SPA
 CF_ID=$($AWS cloudfront create-distribution \
